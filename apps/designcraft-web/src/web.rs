@@ -65,7 +65,7 @@ pub fn start() {
                     if query().contains("sample") {
                         let _ = app.run("file.newSample", serde_json::json!({}));
                     }
-                    Ok(Box::new(WebShell { app, inbox }))
+                    Ok(Box::new(WebShell { app, inbox, theme: Default::default() }))
                 }),
             )
             .await;
@@ -83,15 +83,39 @@ fn query() -> String {
     web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
 }
 
+/// A theme change requested from outside the frame loop (SimpleHub's `set_theme`). `brightness`
+/// is a `window.brightness` id (`"dark"` or `"light"`) taken by the shell on its next frame; `ctx`
+/// lets the requester ask for that frame.
+#[derive(Default)]
+struct ThemeLink {
+    brightness: std::cell::Cell<Option<&'static str>>,
+    ctx: std::cell::RefCell<Option<egui::Context>>,
+}
+
+impl ThemeLink {
+    #[cfg_attr(not(feature = "simplehub"), allow(dead_code))]
+    fn request(&self, brightness: &'static str) {
+        self.brightness.set(Some(brightness));
+        if let Some(ctx) = self.ctx.borrow().as_ref() {
+            ctx.request_repaint();
+        }
+    }
+}
+
 /// Wraps the app to read dropped files asynchronously (browsers can't read them synchronously)
 /// and feed them through the inbox.
 struct WebShell {
     app: DesignApp,
     inbox: Inbox,
+    theme: std::rc::Rc<ThemeLink>,
 }
 
 impl eframe::App for WebShell {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Some(brightness) = self.theme.brightness.take() {
+            // `window.brightness` sets `ui.brightness` and asks `DesignApp::logic` to restyle.
+            let _ = self.app.run("window.brightness", serde_json::json!({"brightness": brightness}));
+        }
         let dropped = ctx.input_mut(|i| std::mem::take(&mut i.raw.dropped_files));
         for f in dropped {
             let inbox = self.inbox.clone();
@@ -203,7 +227,8 @@ fn mime_for(name: &str) -> &'static str {
 /// open a document, `.ase` loads swatches, anything else is placed).
 #[cfg(feature = "simplehub")]
 mod simplehub {
-    use super::{DesignApp, Inbox, Services, Session, WebShell};
+    use super::{DesignApp, Inbox, Services, Session, ThemeLink, WebShell};
+    use std::rc::Rc;
     use wasm_bindgen::JsCast as _;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen_futures::JsFuture;
@@ -212,6 +237,7 @@ mod simplehub {
     #[wasm_bindgen]
     pub struct LayoutHandle {
         runner: eframe::WebRunner,
+        theme: Rc<ThemeLink>,
     }
 
     #[wasm_bindgen]
@@ -223,12 +249,38 @@ mod simplehub {
         pub fn has_panicked(&self) -> bool {
             self.runner.has_panicked()
         }
+
+        /// Switches the running app to `"dark"` or `"light"` on its next frame. Other values are
+        /// ignored.
+        pub fn set_theme(&self, theme: &str) {
+            if let Some(brightness) = parse_theme(theme) {
+                self.theme.request(brightness);
+            }
+        }
     }
 
-    /// Starts Simple Layout on `canvas`, with `bridge` providing open and save.
+    /// `"dark"` picks Simple Layout's Dark interface brightness, `"light"` its Light one (the
+    /// `window.brightness` ids).
+    fn parse_theme(theme: &str) -> Option<&'static str> {
+        match theme.trim().to_ascii_lowercase().as_str() {
+            "dark" => Some("dark"),
+            "light" => Some("light"),
+            _ => None,
+        }
+    }
+
+    /// Starts Simple Layout on `canvas`, with `bridge` providing open and save. An optional
+    /// `theme` property (`"dark"` or `"light"`) on the bridge picks the initial interface
+    /// brightness; without it the app keeps its default (Medium Dark).
     #[wasm_bindgen]
     pub async fn start_simple_layout(canvas: web_sys::HtmlCanvasElement, bridge: JsValue) -> Result<LayoutHandle, JsValue> {
         eframe::WebLogger::init(log::LevelFilter::Info).ok();
+        let initial = js_sys::Reflect::get(&bridge, &JsValue::from_str("theme"))
+            .ok()
+            .and_then(|v| v.as_string())
+            .and_then(|s| parse_theme(&s));
+        let theme = Rc::new(ThemeLink::default());
+        let link = theme.clone();
         let runner = eframe::WebRunner::new();
         runner
             .start(
@@ -239,12 +291,17 @@ mod simplehub {
                         log::info!("simple-layout: wgpu backend {:?}", rs.adapter.get_info().backend);
                     }
                     let inbox: Inbox = Inbox::default();
-                    let app = DesignApp::new(Session::new(), services(bridge, inbox.clone(), cc.egui_ctx.clone()));
-                    Ok(Box::new(WebShell { app, inbox }))
+                    let mut app = DesignApp::new(Session::new(), services(bridge, inbox.clone(), cc.egui_ctx.clone()));
+                    if let Some(brightness) = initial {
+                        // Applied by `DesignApp::logic` before the first frame is drawn.
+                        let _ = app.run("window.brightness", serde_json::json!({"brightness": brightness}));
+                    }
+                    *link.ctx.borrow_mut() = Some(cc.egui_ctx.clone());
+                    Ok(Box::new(WebShell { app, inbox, theme: link }))
                 }),
             )
             .await?;
-        Ok(LayoutHandle { runner })
+        Ok(LayoutHandle { runner, theme })
     }
 
     fn services(bridge: JsValue, inbox: Inbox, ctx: egui::Context) -> Services {

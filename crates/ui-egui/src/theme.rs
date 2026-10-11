@@ -310,6 +310,9 @@ pub fn semibold(size: f32) -> FontId {
 }
 
 pub fn apply(ctx: &egui::Context, t: &Tokens) {
+    // Pin egui's theme so a system `prefers-color-scheme` change cannot swap in the
+    // stock visuals of the other mode: only the active mode is styled below.
+    ctx.set_theme(if t.dark { egui::Theme::Dark } else { egui::Theme::Light });
     ctx.data_mut(|d| d.insert_temp(egui::Id::NULL, *t));
     let text_styles: std::collections::BTreeMap<TextStyle, FontId> = [
         (TextStyle::Small, FontId::proportional(10.0)),
