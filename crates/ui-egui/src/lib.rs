@@ -35,6 +35,20 @@ use serde_json::{Value, json};
 
 pub use control::{ControlRequest, ControlResponse};
 
+/// The name shown to the user in the title, the start screen and the About dialog.
+/// The `simplehub` feature builds the app as Simple Layout inside SimpleHub.
+pub const APP_NAME: &str = if cfg!(feature = "simplehub") { "Simple Layout" } else { "DesignCraft" };
+
+/// A translated UI string with the product name swapped for [`APP_NAME`] (a no-op outside the
+/// `simplehub` feature; the translation tables keep "DesignCraft" verbatim in every language).
+pub fn branded(s: &str) -> std::borrow::Cow<'_, str> {
+    if cfg!(feature = "simplehub") && s.contains("DesignCraft") {
+        std::borrow::Cow::Owned(s.replace("DesignCraft", APP_NAME))
+    } else {
+        std::borrow::Cow::Borrowed(s)
+    }
+}
+
 pub type ReadFn = Box<dyn Fn(&str) -> Result<Vec<u8>, String>>;
 pub type WriteFn = Box<dyn FnMut(&str, &[u8]) -> Result<(), String>>;
 pub type PickFn = Box<dyn FnMut(&str) -> Option<String>>;

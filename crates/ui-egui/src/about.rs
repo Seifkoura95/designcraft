@@ -135,6 +135,37 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
             });
             return;
         }
+        if cfg!(feature = "simplehub") {
+            // SimpleHub build. DesignCraft is MIT OR Apache-2.0; the licence asks for
+            // attribution and the ArtCraft marks are left out (they are not open source).
+            ui.vertical_centered(|ui| {
+                ui.add_space(12.0);
+                ui.label(crate::rtl::widget(ui, egui::RichText::new(crate::APP_NAME).font(semibold(26.0)).color(t.text_strong)));
+                crate::rtl::label(
+                    ui,
+                    egui::RichText::new(format!("{} {}", crate::i18n::tr(&app.ui.language, "Version"), env!("CARGO_PKG_VERSION")))
+                        .size(12.0)
+                        .color(t.text_dim),
+                );
+                ui.add_space(6.0);
+                ui.label(crate::rtl::widget(ui, egui::RichText::new("Page layout for SimpleHub: print and screen documents, IDML and PDF.").size(13.0).color(t.text)));
+                ui.add_space(10.0);
+                ui.label(crate::rtl::widget(
+                    ui,
+                    egui::RichText::new(
+                        "Built on DesignCraft, an open source page layout app by the ArtCraft Team and the DesignCraft contributors, used under the MIT or Apache 2.0 licence.",
+                    )
+                    .size(12.0)
+                    .color(t.text_dim),
+                ));
+                ui.hyperlink_to("github.com/storytold/designcraft", links::GITHUB);
+                ui.add_space(12.0);
+                if ui.button(crate::rtl::widget(ui, crate::i18n::tr(&app.ui.language, "  Close  "))).clicked() {
+                    app.ui.about = false;
+                }
+            });
+            return;
+        }
         ui.vertical_centered(|ui| {
             ui.add_space(8.0);
             let (r, _) = ui.allocate_exact_size(vec2(72.0, 72.0), Sense::hover());

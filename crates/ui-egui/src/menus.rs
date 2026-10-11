@@ -1651,7 +1651,15 @@ fn parse_entries(entries: &[&str]) -> Vec<Item> {
 
 /// The whole menu tree (InDesign order).
 pub fn menu_tree() -> Vec<(&'static str, Vec<Item>)> {
-    MENUS.iter().map(|(m, e)| (*m, parse_entries(e))).collect()
+    MENUS.iter().map(|(m, e)| (*m, parse_entries(e))).map(|(m, items)| (m, items.into_iter().filter(menu_item_shown).collect())).collect()
+}
+
+/// Help entries that point at the ArtCraft community are left out of the SimpleHub build.
+fn menu_item_shown(it: &Item) -> bool {
+    match it {
+        Item::Cmd { id, .. } if cfg!(feature = "simplehub") => !matches!(id.as_str(), "help.discord" | "help.appPage" | "help.website"),
+        _ => true,
+    }
 }
 
 /// Check state of a toggle command (None = not a toggle).
@@ -1791,11 +1799,11 @@ fn menu_items(app: &mut DesignApp, ui: &mut egui::Ui, items: &[Item], path: &str
             }
             Item::Cmd { label, .. } if !app.ui.show_full_menus && app.ui.hidden_menu_items.contains(&menu_key(path, label)) => hidden += 1,
             Item::Cmd { label, id, params, shortcut: _ } => {
-                let label = crate::i18n::tr(&app.ui.language, label);
+                let label = crate::branded(crate::i18n::tr(&app.ui.language, label));
                 let text = match checked(app, id, params) {
                     Some(true) => format!("✓ {label}"),
                     Some(false) => format!("   {label}"),
-                    None => label.to_owned(),
+                    None => label.into_owned(),
                 };
                 let mut b = egui::Button::new(crate::rtl::widget(ui, text));
                 if let Some(sc) = shortcut_of(app, id) {
