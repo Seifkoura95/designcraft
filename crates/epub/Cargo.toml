@@ -12,3 +12,7 @@ workspace = true
 designcraft-doc = { workspace = true }
 designcraft-color = { workspace = true }
 zip = { workspace = true }
+
+[features]
+# SimpleHub build: exported files name Simple Layout as the generator.
+simplehub = []

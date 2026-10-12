@@ -29,3 +29,7 @@ hayro-cmap = "0.1"
 kurbo = { workspace = true }
 tiff = { workspace = true }
 designcraft-fonts = { workspace = true, features = ["testing"] }
+
+[features]
+# SimpleHub build: exported files name Simple Layout as the generator.
+simplehub = []

@@ -158,6 +158,14 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
                     .size(12.0)
                     .color(t.text_dim),
                 ));
+                ui.label(crate::rtl::widget(
+                    ui,
+                    egui::RichText::new(
+                        "Not affiliated with or endorsed by Adobe, Microsoft, Autodesk or Avid. Other product names are trademarks of their respective owners.",
+                    )
+                    .size(12.0)
+                    .color(t.text_dim),
+                ));
                 ui.hyperlink_to("github.com/storytold/designcraft", links::GITHUB);
                 ui.add_space(12.0);
                 if ui.button(crate::rtl::widget(ui, crate::i18n::tr(&app.ui.language, "  Close  "))).clicked() {

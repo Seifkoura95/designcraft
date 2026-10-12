@@ -103,7 +103,7 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
         "book" => &[OpenFilter { name: "Book", extensions: &["dcbook"] }],
         "xml" => &[OpenFilter { name: "XML", extensions: &["xml"] }],
         "library" => &[OpenFilter { name: "Object Library", extensions: &["dclib"] }],
-        "dataMerge" => &[OpenFilter { name: "Data source (CSV, TSV, text, Excel)", extensions: &["csv", "tsv", "tab", "txt", "xlsx"] }],
+        "dataMerge" => &[OpenFilter { name: "Data source (CSV, TSV, text, XLSX)", extensions: &["csv", "tsv", "tab", "txt", "xlsx"] }],
         "place" => &[
             OpenFilter {
                 name: "Graphics and text",
@@ -142,13 +142,13 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
                 name: "Graphics",
                 extensions: &["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "psd", "svg", "pdf", "ai", "eps"],
             },
-            OpenFilter { name: "Text (Word, RTF, plain, Excel)", extensions: &["docx", "rtf", "txt", "md", "xlsx"] },
+            OpenFilter { name: "Text (DOCX, RTF, plain, XLSX)", extensions: &["docx", "rtf", "txt", "md", "xlsx"] },
             OpenFilter { name: "Video and sound", extensions: &["mp4", "m4v", "mov", "webm", "mp3", "m4a", "wav", "ogg"] },
         ],
         _ => &[
             OpenFilter { name: "DesignCraft or IDML", extensions: &["designcraft", "idml"] },
             OpenFilter { name: "DesignCraft", extensions: &["designcraft"] },
-            OpenFilter { name: "InDesign Markup (IDML)", extensions: &["idml"] },
+            OpenFilter { name: "IDML package (.idml)", extensions: &["idml"] },
         ],
     }
 }

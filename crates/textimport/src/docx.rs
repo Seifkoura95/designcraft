@@ -312,7 +312,7 @@ impl Ctx {
                 }
                 "drawing" | "pict" | "object" => {
                     if !self.warnings.iter().any(|w| w.starts_with("Images")) {
-                        self.warnings.push("Images and drawings in the Word file were not imported (place them separately).".into());
+                        self.warnings.push("Images and drawings in the DOCX file were not imported (place them separately).".into());
                     }
                     continue;
                 }
@@ -328,7 +328,7 @@ impl Ctx {
 
 pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| ImportError::Corrupt(e.to_string()))?;
-    let doc = part(&mut zip, "word/document.xml")?.ok_or_else(|| ImportError::Corrupt("no word/document.xml (not a Word document)".into()))?;
+    let doc = part(&mut zip, "word/document.xml")?.ok_or_else(|| ImportError::Corrupt("no word/document.xml (not a DOCX document)".into()))?;
     let doc = parse(&doc)?;
     // Styles.
     let mut ctx = Ctx { para_names: HashMap::new(), char_names: HashMap::new(), footnotes: HashMap::new(), warnings: vec![], next_table: 0 };

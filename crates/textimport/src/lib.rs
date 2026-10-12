@@ -84,7 +84,7 @@ pub fn import(name: &str, bytes: &[u8]) -> Result<Imported, ImportError> {
         return tagged::import(bytes);
     }
     if l.ends_with(".doc") {
-        return Err(ImportError::Unsupported("legacy Word .doc (save it as .docx)".into()));
+        return Err(ImportError::Unsupported("legacy .doc file (save it as .docx)".into()));
     }
     Ok(plain(&String::from_utf8_lossy(bytes)))
 }
